@@ -1,3 +1,4 @@
+import os
 import logging
 import requests
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -6,6 +7,11 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 # Настройки логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Чтение переменных среды
+TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+WG_API_KEY = os.getenv('WG_API_KEY')
+WG_ACCOUNT_ID = os.getenv('WG_ACCOUNT_ID')
 
 # Вспомогательная функция для API запросов
 def get_wot_stats(api_key, account_id):
@@ -36,25 +42,21 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    api_key = 'YOUR_WG_API_KEY'
-    account_id = 'YOUR_ACCOUNT_ID'
-
     if query.data == '1':
-        stats = get_wot_stats(api_key, account_id)
+        stats = get_wot_stats(WG_API_KEY, WG_ACCOUNT_ID)
         if stats:
             battles, win_rate, hits_percents = stats
             message = f"Проведено боев: {battles}\nПроцент побед: {win_rate}%\nПроцент попадания: {hits_percents}%"
         else:
             message = "Ошибка при получении данных."
     elif query.data == '2':
-        # Здесь должен быть код для получения статистики за последние 7 дней
         message = "Статистика за последние 7 дней (функция еще не реализована)."
 
     await query.edit_message_text(text=message)
 
 # Функция запуска бота
 def main():
-    application = Application.builder().token('YOUR_TELEGRAM_BOT_TOKEN').build()
+    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CallbackQueryHandler(button))
     application.run_polling()
