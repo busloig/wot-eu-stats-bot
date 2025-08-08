@@ -41,7 +41,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
+    
     if query.data == '1':
         stats = get_wot_stats(WG_API_KEY, WG_ACCOUNT_ID)
         if stats:
@@ -50,10 +50,14 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             message = "Ошибка при получении данных."
     elif query.data == '2':
-        message = "Статистика за последние 7 дней (функция еще не реализована)."
+        stats = get_last_week_stats(WG_API_KEY, WG_ACCOUNT_ID)
+        if stats:
+            battles, hits, wins = stats
+            message = f"За последние 7 дней:\nПроведено боев: {battles}\nПопаданий: {hits}\nПобеды: {wins}"
+        else:
+            message = "Ошибка при получении данных за последнюю неделю."
 
     await query.edit_message_text(text=message)
-
 # Функция запуска бота
 def main():
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
