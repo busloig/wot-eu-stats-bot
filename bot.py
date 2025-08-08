@@ -1,14 +1,13 @@
-import asyncio
-import os
+import logging
 import requests
-from aiogram import Bot
-from dotenv import load_dotenv
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # Настройки логирования
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Функция для получения статистики из API Wargaming
+# Вспомогательная функция для API запросов
 def get_wot_stats(api_key, account_id):
     url = f"https://api.worldoftanks.eu/wot/account/info/?application_id={api_key}&account_id={account_id}"
     response = requests.get(url)
@@ -23,22 +22,41 @@ def get_wot_stats(api_key, account_id):
         return battles, win_rate, hits_percents
     return None
 
-# Обработчик команды /stats
-async def wot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Функция начальной приветственной команды
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("Статистика на аккаунте", callback_data='1')],
+        [InlineKeyboardButton("Статистика за последние 7 дней", callback_data='2')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text('Выберите опцию:', reply_markup=reply_markup)
+
+# Callback функция для обработки нажатий кнопок
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
     api_key = 'YOUR_WG_API_KEY'
     account_id = 'YOUR_ACCOUNT_ID'
-    stats = get_wot_stats(api_key, account_id)
-    if stats:
-        battles, win_rate, hits_percents = stats
-        message = f"Проведено боев: {battles}\nПроцент побед: {win_rate}%\nПроцент попадания: {hits_percents}%"
-    else:
-        message = "Ошибка при получении данных."
-    await update.message.reply_text(message)
+
+    if query.data == '1':
+        stats = get_wot_stats(api_key, account_id)
+        if stats:
+            battles, win_rate, hits_percents = stats
+            message = f"Проведено боев: {battles}\nПроцент побед: {win_rate}%\nПроцент попадания: {hits_percents}%"
+        else:
+            message = "Ошибка при получении данных."
+    elif query.data == '2':
+        # Здесь должен быть код для получения статистики за последние 7 дней
+        message = "Статистика за последние 7 дней (функция еще не реализована)."
+
+    await query.edit_message_text(text=message)
 
 # Функция запуска бота
 def main():
     application = Application.builder().token('YOUR_TELEGRAM_BOT_TOKEN').build()
-    application.add_handler(CommandHandler('stats', wot_stats))
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(CallbackQueryHandler(button))
     application.run_polling()
 
 if __name__ == '__main__':
