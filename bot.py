@@ -27,6 +27,32 @@ def get_wot_stats(api_key, account_id):
         win_rate = round((wins / battles) * 100, 2) if battles else 0
         return battles, win_rate, hits_percents
     return None
+#Добавим постоянное отображение кнопки старт
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    # Та же клавиатура, что и в функции start
+    keyboard = [[KeyboardButton("/start")]]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
+
+    if query.data == '1':
+        stats = get_wot_stats(WG_API_KEY, WG_ACCOUNT_ID)
+        if stats:
+            battles, win_rate, hits_percents = stats
+            message = f"Проведено боев: {battles}\nПроцент побед: {win_rate}%\nПроцент попадания: {hits_percents}%"
+        else:
+            message = "Ошибка при получении данных."
+    elif query.data == '2':
+        stats = get_last_week_stats(WG_API_KEY, WG_ACCOUNT_ID)
+        if stats:
+            battles, hits, wins = stats
+            message = f"За последние 7 дней:\nПроведено боев: {battles}\nПопаданий: {hits}\nПобеды: {wins}"
+        else:
+            message = "Ошибка при получении данных за последнюю неделю."
+
+    # Обновляем сообщение с тем же reply_markup
+    await query.edit_message_text(text=message, reply_markup=reply_markup)
 
 # Функция начальной приветственной команды
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
