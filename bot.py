@@ -1,7 +1,8 @@
-import logging
+import asyncio
+import os
 import requests
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from aiogram import Bot
+from dotenv import load_dotenv
 
 # Настройки логирования
 logging.basicConfig(level=logging.INFO)
