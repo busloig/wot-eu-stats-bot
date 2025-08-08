@@ -1,7 +1,7 @@
 import os
 import logging
 import requests
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 
 # Настройки логирования
@@ -20,7 +20,7 @@ def get_wot_stats(api_key, account_id):
     data = response.json()
 
     if data and data.get('status') == 'ok':
-        user_data = data['data'][str(account_id)]
+        user_data = data['data'][str(account_id)] 
         battles = user_data['statistics']['all']['battles']
         wins = user_data['statistics']['all']['wins']
         hits_percents = user_data['statistics']['all']['hits_percents']
@@ -28,16 +28,16 @@ def get_wot_stats(api_key, account_id):
         return battles, win_rate, hits_percents
     return None
 
-# Постоянная клавиатура "Старт"
-def start_keyboard():
-    keyboard = [[KeyboardButton("/start")]]
-    return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=True)
-
 # Функция обработки команды /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("Общая статистика", callback_data='1')],
+        [InlineKeyboardButton("Статистика за последние 7 дней", callback_data='2')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        'Привет! Нажмите Старт, чтобы продолжить.',
-        reply_markup=start_keyboard()
+        'Выберите тип статистики:',
+        reply_markup=reply_markup
     )
 
 # Функция для обработки кнопок
@@ -54,19 +54,14 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message = "Ошибка при получении данных."
     elif query.data == '2':
         message = "Статистика за последние 7 дней (функция еще не реализована)."
-
-    # Ответ с той же клавиатурой "Старт"
-    await update.message.reply_text(message, reply_markup=start_keyboard())
+    
+    await query.edit_message_text(text=message)
 
 # Основная функция запуска бота
 def main():
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
-
-    # Обработчики команд
-    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler('start', start))
     application.add_handler(CallbackQueryHandler(button))
-
-    # Запуск бота
     application.run_polling()
 
 if __name__ == '__main__':
