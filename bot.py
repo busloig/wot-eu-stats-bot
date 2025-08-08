@@ -20,23 +20,29 @@ def get_general_stats(api_key, account_id):
     data = response.json()
 
     if data and data.get('status') == 'ok':
-        user_data = data['data'][str(account_id)]
-        statistics = user_data['statistics']['all']
+        statistics = data['data'][str(account_id)]['statistics']['all']
         battles = statistics['battles']
         wins = statistics['wins']
         
-        # Предположения для демонстрации
+        # Данные по урону
         avg_damage = statistics.get('avg_damage', 0)
-        damage_above_avg = 75  # Упрощенное число
-        damage_below_avg = 50  # Упрощенное число
-        damage_avg = battles - damage_above_avg - damage_below_avg
+        damage_above_avg = 75  # Пример данных
+        damage_below_avg = 50  # Пример данных
         
+        # Данные по пробитию
+        avg_penetrations = statistics.get('avg_penetrations', 0)
+        penetrations_above_avg = 40
+        penetrations_below_avg = 30
+
         return {
             'battles': battles,
             'win_rate': round((wins / battles) * 100, 2),
-            'damage_above_avg': damage_above_avg,
-            'damage_below_avg': damage_below_avg,
-            'damage_avg': damage_avg
+            'damage_above_avg': round((damage_above_avg / battles) * 100, 2),
+            'damage_below_avg': round((damage_below_avg / battles) * 100, 2),
+            'damage_avg': round((battles - damage_above_avg - damage_below_avg) * 100 / battles, 2),
+            'penetrations_above_avg': round((penetrations_above_avg / battles) * 100, 2),
+            'penetrations_below_avg': round((penetrations_below_avg / battles) * 100, 2),
+            'penetrations_avg': round((battles - penetrations_above_avg - penetrations_below_avg) * 100 / battles, 2)
         }
     return None
 
@@ -58,12 +64,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if stats:
             message = (f"Проведено боев: {stats['battles']}\n"
                        f"Процент побед: {stats['win_rate']}%\n"
-                       f"Урон выше среднего: {stats['damage_above_avg']}\n"
-                       f"Урон ниже среднего: {stats['damage_below_avg']}\n"
-                       f"Урон средний: {stats['damage_avg']}")
+                       f"Урон выше среднего: {stats['damage_above_avg']}%\n"
+                       f"Урон ниже среднего: {stats['damage_below_avg']}%\n"
+                       f"Средний урон: {stats['damage_avg']}%\n"
+                       f"Пробития выше среднего: {stats['penetrations_above_avg']}%\n"
+                       f"Пробития ниже среднего: {stats['penetrations_below_avg']}%\n"
+                       f"Средние пробития: {stats['penetrations_avg']}%")
         else:
             message = "Ошибка при получении данных."
-    await query.edit_message_text(text=message)
+        await query.edit_message_text(text=message)
 
 # Основная функция запуска бота
 def main():
